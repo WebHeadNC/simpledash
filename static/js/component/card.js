@@ -13,11 +13,28 @@ function createCard(domain, editMode) {
       statusClass = "yellow";
     }
   
-    card.innerHTML = `
-      <div class="status-dot ${statusClass}"></div>
-      <h3>${domain.domain_names.join(", ")}</h3>
-      <p>${hostPort}</p>
-    `;
+    const statusDot = document.createElement("div");
+    statusDot.className = `status-dot ${statusClass}`;
+
+    const displayName = getDomainDisplayName(domain);
+
+    let title;
+    if (editMode) {
+      title = document.createElement("input");
+      title.className = "card-name-input";
+      title.dataset.id = domain.id;
+      title.value = displayName;
+    } else {
+      title = document.createElement("h3");
+      title.textContent = displayName;
+    }
+
+    const hostPortEl = document.createElement("p");
+    hostPortEl.textContent = hostPort;
+
+    card.appendChild(statusDot);
+    card.appendChild(title);
+    card.appendChild(hostPortEl);
   
     if (!editMode) {
       const linkOverlay = document.createElement("a");

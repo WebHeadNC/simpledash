@@ -97,9 +97,12 @@ function performSearch(query) {
       .filter((domain) => {
         if (!domain) return false;
 
-        const matchesDomainName = domain.domain_names.some((name) =>
-          name.toLowerCase().includes(lowerCaseQuery)
-        );
+        const customName = getCustomDomainName(domain);
+        const matchesDomainName = customName
+          ? customName.toLowerCase().includes(lowerCaseQuery)
+          : domain.domain_names.some((name) =>
+              name.toLowerCase().includes(lowerCaseQuery)
+            );
 
         const hostPort = `${domain.forward_host}:${domain.forward_port}`;
         const matchesIP = hostPort.toLowerCase().includes(lowerCaseQuery);

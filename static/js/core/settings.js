@@ -71,6 +71,10 @@ function applySettings(updatedKeys = Object.keys(currentSettings)) {
         renamedGroupNames = value || {};
         break;
 
+      case "renamedDomainNames":
+        renamedDomainNames = value || {};
+        break;
+
       default:
         console.warn(`Unhandled setting key: "${key}"`);
     }
@@ -94,12 +98,3 @@ async function saveSettingsToJson(updates = {}) {
     console.error("Error saving settings:", error);
   }
 }
-
-document.addEventListener("DOMContentLoaded", async () => {
-  try {
-    currentSettings = await fetchSettings();
-    applySettings();
-  } catch (error) {
-    console.error("Initialization failed:", error);
-  }
-});

@@ -1,4 +1,6 @@
-let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria;
+let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames;
+
+const HIDDEN_GROUP_NAME = "Hidden";
 
 const DEFAULT_SETTINGS = {
   groups: { "New Services": [] },
@@ -7,6 +9,7 @@ const DEFAULT_SETTINGS = {
   hideInactive: false,
   sortBy: "domain",
   renamedGroupNames: { allServices: "New Services" },
+  renamedDomainNames: {},
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -50,11 +53,17 @@ async function fetchAndRender() {
     allDomains = settings.domains || DEFAULT_SETTINGS.domains;
     maxColumns = settings.maxColumns || DEFAULT_SETTINGS.maxColumns;
     showInactive = !settings.hideInactive;
-    allServicesGroupName =
-      settings.renamedGroupNames?.allServices || DEFAULT_SETTINGS.renamedGroupNames.allServices;
+    renamedGroupNames = settings.renamedGroupNames || DEFAULT_SETTINGS.renamedGroupNames;
+    allServicesGroupName = renamedGroupNames.allServices || DEFAULT_SETTINGS.renamedGroupNames.allServices;
+    renamedDomainNames = settings.renamedDomainNames || DEFAULT_SETTINGS.renamedDomainNames;
 
     if (!groups[allServicesGroupName]) {
       groups[allServicesGroupName] = allDomains.map((domain) => domain.id);
+    }
+
+    if (!groups[HIDDEN_GROUP_NAME]) {
+      groups[HIDDEN_GROUP_NAME] = [];
+      await saveGroupsToJSON(groups);
     }
 
     document.getElementById("max-columns-toggle").textContent = `Columns: ${maxColumns}`;
@@ -98,30 +107,37 @@ function renderDashboard() {
   const dashboard = document.getElementById("dashboard");
   dashboard.innerHTML = "";
 
-  const groupCount = Object.keys(groups).length;
-  updateGridTemplate(groupCount);
+  const visibleGroupNames = Object.keys(groups).filter(
+    (groupName) => editMode || groupName !== HIDDEN_GROUP_NAME
+  );
+  updateGridTemplate(visibleGroupNames.length);
 
-  Object.keys(groups).forEach((groupName) => {
+  visibleGroupNames.forEach((groupName) => {
     const groupContainer = document.createElement("div");
     groupContainer.className = "group-container";
     groupContainer.dataset.group = groupName;
+    groupContainer.draggable = editMode;
 
     const groupHeader = document.createElement("div");
     groupHeader.className = "group-header";
 
-    if (editMode) {
-      groupHeader.innerHTML = `
-            <input 
-                class="group-name-input" 
-                data-group="${groupName}" 
-                value="${groupName}" 
-            />
-            <button class="delete-group-button" data-group="${groupName}">
-                &times;
-            </button>
-        `;
+    if (editMode && groupName !== HIDDEN_GROUP_NAME) {
+      const nameInput = document.createElement("input");
+      nameInput.className = "group-name-input";
+      nameInput.dataset.group = groupName;
+      nameInput.value = groupName;
+
+      const deleteButton = document.createElement("button");
+      deleteButton.className = "delete-group-button";
+      deleteButton.dataset.group = groupName;
+      deleteButton.textContent = "×";
+
+      groupHeader.appendChild(nameInput);
+      groupHeader.appendChild(deleteButton);
     } else {
-      groupHeader.innerHTML = `<h2>${groupName}</h2>`;
+      const heading = document.createElement("h2");
+      heading.textContent = groupName;
+      groupHeader.appendChild(heading);
     }
 
     groupContainer.appendChild(groupHeader);
@@ -142,7 +158,7 @@ function renderDashboard() {
     domainIds.forEach((domainId) => {
       const domain = allDomains.find((d) => d.id === domainId);
       if (domain && (showInactive || domain.enabled)) {
-        const card = createCard(domain);
+        const card = createCard(domain, editMode);
         groupServices.appendChild(card);
       }
     });
@@ -171,6 +187,7 @@ function renderDashboard() {
   if (editMode) {
     setupGroupNameEditing();
     setupDeleteGroupButtons();
+    setupCardNameEditing();
   }
 
   setupDragAndDrop();
@@ -184,6 +201,7 @@ async function saveSettingsToJson() {
     hideInactive: !showInactive,
     sortBy: currentSortCriteria,
     renamedGroupNames: { allServices: allServicesGroupName },
+    renamedDomainNames,
   };
 
   try {

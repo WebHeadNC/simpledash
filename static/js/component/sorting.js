@@ -87,7 +87,7 @@ function sortDomains(criteria) {
 
       switch (criteria) {
         case "domain":
-          return domA.domain_names[0].localeCompare(domB.domain_names[0]);
+          return getDomainDisplayName(domA).localeCompare(getDomainDisplayName(domB));
         case "status":
           return getStatusRank(domA) - getStatusRank(domB);
         case "ip":

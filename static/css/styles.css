@@ -221,6 +221,10 @@ main {
   transform: translateY(-3px);
   box-shadow: 0px 6px 10px var(--shadow-medium);
 }
+.group-container.highlight {
+  outline: 2px dashed var(--primary-color);
+  outline-offset: -2px;
+}
 .group-header {
   display: flex;
   justify-content: space-between;
@@ -268,6 +272,23 @@ main {
 .card p {
   margin: 0;
   color: var(--text-dark);
+}
+.card-name-input {
+  display: block;
+  width: 100%;
+  font-weight: 600;
+  color: var(--primary-color);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed transparent;
+  margin: 0 0 0.25rem;
+  padding: 0.1rem 0;
+  transition: border-color var(--transition-speed),
+    color var(--transition-speed);
+}
+.card-name-input:focus {
+  outline: none;
+  border-bottom: 1px dashed var(--primary-color);
 }
 .card.online {
   border-left-color: var(--highlight-color);

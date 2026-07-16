@@ -30,6 +30,8 @@ os.makedirs(os.path.dirname(SETTINGS_FILE), exist_ok=True)
 print(f"Settings File: {SETTINGS_FILE}")
 print(f"Read-Only DB Path: {READ_ONLY_DB_PATH}")
 
+ALLOWED_THEMES = {"light", "dark", "midnight", "terminal"}
+
 DEFAULT_SETTINGS = {
     "theme": "light",
     "hideInactive": False,
@@ -38,7 +40,8 @@ DEFAULT_SETTINGS = {
     "sortBy": "domain",
     "maxColumns": 3,
     "groups": {},
-    "renamedGroupNames": {}
+    "renamedGroupNames": {},
+    "renamedDomainNames": {}
 }
 
 cached_domains = {
@@ -137,6 +140,9 @@ def update_settings():
     except (ValueError, TypeError):
         return jsonify({"error": "Invalid JSON data"}), 400
 
+    if "theme" in new_settings and new_settings["theme"] not in ALLOWED_THEMES:
+        return jsonify({"error": "Invalid theme"}), 400
+
     settings.update(new_settings)
     save_settings(settings)
     return jsonify({"message": "Settings updated successfully"}), 200
@@ -168,6 +174,8 @@ def refresh_domains():
 def serve_frontend():
     """Serve the main frontend HTML with theme injected."""
     saved_theme = settings.get("theme", "light")
+    if saved_theme not in ALLOWED_THEMES:
+        saved_theme = "light"
     index_path = os.path.join(app.static_folder, "index.html")
 
     if not os.path.exists(index_path):
