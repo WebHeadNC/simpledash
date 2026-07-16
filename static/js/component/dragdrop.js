@@ -11,7 +11,7 @@ function setupDragAndDrop() {
   droppables.forEach((groupContainer) => {
     groupContainer.addEventListener("dragstart", (event) => {
       if (event.target !== groupContainer) return;
-      event.dataTransfer.setData("application/x-dashly-group", groupContainer.dataset.group);
+      event.dataTransfer.setData("application/x-simpledash-group", groupContainer.dataset.group);
     });
 
     groupContainer.addEventListener("dragover", (event) => {
@@ -28,8 +28,8 @@ function setupDragAndDrop() {
       groupContainer.classList.remove("highlight");
       const targetGroup = groupContainer.dataset.group;
 
-      if (event.dataTransfer.types.includes("application/x-dashly-group")) {
-        const draggedGroup = event.dataTransfer.getData("application/x-dashly-group");
+      if (event.dataTransfer.types.includes("application/x-simpledash-group")) {
+        const draggedGroup = event.dataTransfer.getData("application/x-simpledash-group");
         if (!draggedGroup || draggedGroup === targetGroup) return;
 
         groups = reorderGroups(groups, draggedGroup, targetGroup);

@@ -16,11 +16,11 @@ def get_version_from_git():
         print(f"Error fetching version: {e}")
         return "Unknown"
 
-DASHLY_VERSION = get_version_from_git()
+APP_VERSION = get_version_from_git()
 
 @app.route("/version")
 def get_version():
-    return jsonify({"version": DASHLY_VERSION})
+    return jsonify({"version": APP_VERSION})
 
 SETTINGS_FILE = os.getenv("USER_SETTINGS_FILE", "/app/data/settings.json")
 READ_ONLY_DB_PATH = os.getenv("NGINX_DB_PATH", "/nginx/database.sqlite")

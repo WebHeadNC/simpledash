@@ -1,6 +1,6 @@
 {
-  "name": "Dashly",
-  "short_name": "Dashly",
+  "name": "SimpleDash",
+  "short_name": "SimpleDash",
   "icons": [
     {
       "src": "/assets/web-app-manifest-192x192.png",

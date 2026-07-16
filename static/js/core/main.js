@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const { version: localVersion } = await localVersionResponse.json();
 
-    const latestVersionResponse = await fetch("https://api.github.com/repos/lklynet/dashly/tags");
+    const latestVersionResponse = await fetch("https://api.github.com/repos/WebHeadNC/simpledash/tags");
     if (!latestVersionResponse.ok) throw new Error("Failed to fetch latest version");
 
     const tags = await latestVersionResponse.json();

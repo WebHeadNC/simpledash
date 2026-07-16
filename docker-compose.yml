@@ -1,5 +1,5 @@
 services:
-  dashly:
+  simpledash:
     image: ghcr.io/webheadnc/simpledash:latest
     ports:
       - "${PORT:-8080}:8080" # User-configurable via .env
