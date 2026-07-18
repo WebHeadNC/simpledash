@@ -41,17 +41,10 @@ async function saveSettingsToJson() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const settingsResponse = await fetch("/settings");
-    if (!settingsResponse.ok) throw new Error("Failed to fetch settings");
-
-    currentSettings = await settingsResponse.json();
-    currentSortCriteria = currentSettings.sortBy || "domain";
+    await settingsReady;
 
     const sortButton = document.getElementById("sort-toggle");
     sortButton.textContent = `Sort: ${formatSortOption(currentSortCriteria)}`;
-
-    sortDomains(currentSortCriteria);
-    renderDashboard();
   } catch (error) {
     console.error("Error loading sort settings:", error);
   }

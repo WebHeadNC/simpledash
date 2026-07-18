@@ -17,7 +17,7 @@ function applyLayout(layout) {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const settings = await fetchSettings();
+    const settings = await settingsReady;
     currentLayout = settings.layoutView || currentLayout;
     applyLayout(currentLayout);
   } catch (error) {

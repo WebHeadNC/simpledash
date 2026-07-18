@@ -1,7 +1,7 @@
 const PENCIL_ICON_SVG =
-  '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2L5 13l-2.6.6.6-2.6L11.5 2.5z"/></svg>';
+  '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2L5 13l-2.6.6.6-2.6L11.5 2.5z"/></svg>';
 const CHECK_ICON_SVG =
-  '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>';
+  '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>';
 
 function createCard(domain, editMode, isEditingCard) {
   const card = document.createElement("div");
@@ -34,6 +34,7 @@ function createCard(domain, editMode, isEditingCard) {
     nameEl.className = "card-name-input";
     nameEl.dataset.id = domain.id;
     nameEl.value = displayName;
+    nameEl.draggable = false;
   } else {
     nameEl = document.createElement("h3");
     nameEl.textContent = displayName;
@@ -66,6 +67,7 @@ function createCard(domain, editMode, isEditingCard) {
     descInput.dataset.id = domain.id;
     descInput.value = description || "";
     descInput.placeholder = "Add a description";
+    descInput.draggable = false;
     card.appendChild(descInput);
   } else if (description) {
     const descEl = document.createElement("p");

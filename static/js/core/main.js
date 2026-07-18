@@ -1,6 +1,13 @@
 let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions;
 let editingCardIds = new Set();
 
+// Resolved once with the single initial /settings fetch, so every other module
+// can read the same response instead of each firing its own fetch on load.
+let settingsReadyResolve;
+const settingsReady = new Promise((resolve) => {
+  settingsReadyResolve = resolve;
+});
+
 const HIDDEN_GROUP_NAME = "Hidden";
 
 const DEFAULT_SETTINGS = {
@@ -48,17 +55,20 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 async function fetchAndRender() {
+  let settings = {};
   try {
-    const settings = await fetchSettings();
+    settings = await fetchSettings();
 
     groups = settings.groups || DEFAULT_SETTINGS.groups;
-    allDomains = settings.domains || DEFAULT_SETTINGS.domains;
+    allDomains = settings.allDomains || DEFAULT_SETTINGS.domains;
     maxColumns = settings.maxColumns || DEFAULT_SETTINGS.maxColumns;
     showInactive = !settings.hideInactive;
     renamedGroupNames = settings.renamedGroupNames || DEFAULT_SETTINGS.renamedGroupNames;
     allServicesGroupName = renamedGroupNames.allServices || DEFAULT_SETTINGS.renamedGroupNames.allServices;
     renamedDomainNames = settings.renamedDomainNames || DEFAULT_SETTINGS.renamedDomainNames;
     domainDescriptions = settings.domainDescriptions || DEFAULT_SETTINGS.domainDescriptions;
+    currentSettings = settings;
+    currentSortCriteria = settings.sortBy || DEFAULT_SETTINGS.sortBy;
 
     if (!groups[allServicesGroupName]) {
       groups[allServicesGroupName] = allDomains.map((domain) => domain.id);
@@ -75,13 +85,16 @@ async function fetchAndRender() {
       : "Show Inactive Domains";
 
     const sortButton = document.getElementById("sort-toggle");
-    sortButton.textContent = `Sort: ${formatSortOption(currentSettings.sortBy || "domain")}`;
+    sortButton.textContent = `Sort: ${formatSortOption(currentSortCriteria)}`;
 
+    sortDomains(currentSortCriteria);
     renderDashboard();
     setupEventListeners();
     setupDragAndDrop();
   } catch (error) {
     console.error("Error fetching and rendering settings:", error);
+  } finally {
+    settingsReadyResolve(settings);
   }
 }
 
@@ -116,7 +129,7 @@ function renderDashboard() {
     const groupContainer = document.createElement("div");
     groupContainer.className = "group-container";
     groupContainer.dataset.group = groupName;
-    groupContainer.draggable = editMode;
+    groupContainer.draggable = editMode && editingCardIds.size === 0;
 
     const groupHeader = document.createElement("div");
     groupHeader.className = "group-header";

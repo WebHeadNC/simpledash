@@ -30,8 +30,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   try {
-    currentSettings = await fetchSettings();
-    const currentTheme = currentSettings.theme || "light";
+    const settings = await settingsReady;
+    currentSettings = settings;
+    const currentTheme = settings.theme || "light";
     applyTheme(currentTheme);
   } catch (error) {
     console.error("Error loading theme settings:", error);
@@ -42,17 +43,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 themeButton.addEventListener("click", toggleTheme);
-
-async function fetchSettings() {
-  try {
-    const response = await fetch("/settings");
-    if (!response.ok) throw new Error("Failed to fetch settings.");
-    return await response.json();
-  } catch (error) {
-    console.error("Error fetching settings:", error);
-    return {};
-  }
-}
 
 async function saveSettingsToJson(updates = {}) {
   try {

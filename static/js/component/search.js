@@ -31,10 +31,7 @@ async function toggleSearchVisibility() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   try {
-    const settingsResponse = await fetch("/settings");
-    if (!settingsResponse.ok) throw new Error("Failed to fetch settings");
-
-    const settings = await settingsResponse.json();
+    const settings = await settingsReady;
     searchBarVisible =
       settings.hideSearch !== undefined ? !settings.hideSearch : true;
 
