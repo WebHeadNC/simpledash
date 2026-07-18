@@ -1,4 +1,5 @@
-let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames;
+let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions;
+let editingCardIds = new Set();
 
 const HIDDEN_GROUP_NAME = "Hidden";
 
@@ -10,6 +11,7 @@ const DEFAULT_SETTINGS = {
   sortBy: "domain",
   renamedGroupNames: { allServices: "New Services" },
   renamedDomainNames: {},
+  domainDescriptions: {},
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -56,6 +58,7 @@ async function fetchAndRender() {
     renamedGroupNames = settings.renamedGroupNames || DEFAULT_SETTINGS.renamedGroupNames;
     allServicesGroupName = renamedGroupNames.allServices || DEFAULT_SETTINGS.renamedGroupNames.allServices;
     renamedDomainNames = settings.renamedDomainNames || DEFAULT_SETTINGS.renamedDomainNames;
+    domainDescriptions = settings.domainDescriptions || DEFAULT_SETTINGS.domainDescriptions;
 
     if (!groups[allServicesGroupName]) {
       groups[allServicesGroupName] = allDomains.map((domain) => domain.id);
@@ -95,11 +98,8 @@ function updateGridTemplate(groupCount) {
   dashboard.style.display = "grid";
   dashboard.style.gridGap = "1rem";
 
-  if (groupCount <= maxColumns) {
-    dashboard.style.gridTemplateColumns = `repeat(${groupCount}, 1fr)`;
-  } else {
-    dashboard.style.gridTemplateColumns = `repeat(${maxColumns}, 1fr)`;
-  }
+  const columns = window.innerWidth < 640 ? 1 : Math.min(groupCount, maxColumns);
+  dashboard.style.gridTemplateColumns = `repeat(${columns}, 1fr)`;
   dashboard.style.gridAutoRows = "auto";
 }
 
@@ -158,7 +158,7 @@ function renderDashboard() {
     domainIds.forEach((domainId) => {
       const domain = allDomains.find((d) => d.id === domainId);
       if (domain && (showInactive || domain.enabled)) {
-        const card = createCard(domain, editMode);
+        const card = createCard(domain, editMode, editingCardIds.has(domainId));
         groupServices.appendChild(card);
       }
     });
@@ -187,7 +187,7 @@ function renderDashboard() {
   if (editMode) {
     setupGroupNameEditing();
     setupDeleteGroupButtons();
-    setupCardNameEditing();
+    setupCardEditButtons();
   }
 
   setupDragAndDrop();
@@ -202,6 +202,7 @@ async function saveSettingsToJson() {
     sortBy: currentSortCriteria,
     renamedGroupNames: { allServices: allServicesGroupName },
     renamedDomainNames,
+    domainDescriptions,
   };
 
   try {

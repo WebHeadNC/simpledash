@@ -75,6 +75,10 @@ function applySettings(updatedKeys = Object.keys(currentSettings)) {
         renamedDomainNames = value || {};
         break;
 
+      case "domainDescriptions":
+        domainDescriptions = value || {};
+        break;
+
       default:
         console.warn(`Unhandled setting key: "${key}"`);
     }

@@ -10,56 +10,79 @@ function getDomainDisplayName(domain) {
   return getCustomDomainName(domain) || getStrippedDomainLabel(domain.domain_names?.[0]);
 }
 
-function setupCardNameEditing() {
-  const cardNameInputs = document.querySelectorAll(".card-name-input");
+function getDomainDescription(domain) {
+  return domain && domainDescriptions ? domainDescriptions[domain.id] : undefined;
+}
 
-  cardNameInputs.forEach((input) => {
-    async function handleCardRename(event) {
-      const domainId = parseInt(event.target.dataset.id, 10);
-      const domain = allDomains.find((d) => d.id === domainId);
-      if (!domain) return;
+function setupCardEditButtons() {
+  document.querySelectorAll(".card-edit-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await handleCardEditToggle(button);
+    });
+  });
 
-      const newName = event.target.value.trim();
-
-      if (newName === getDomainDisplayName(domain)) {
-        return;
-      }
-
-      if (newName) {
-        renamedDomainNames[domain.id] = newName;
-      } else {
-        delete renamedDomainNames[domain.id];
-      }
-
-      await saveRenamedDomainNamesToJSON(renamedDomainNames);
-
-      sortDomains(currentSortCriteria);
-      renderDashboard();
-      setupDragAndDrop();
-    }
-
-    input.addEventListener("blur", handleCardRename);
-
+  document.querySelectorAll(".card-name-input, .card-desc-input").forEach((input) => {
     input.addEventListener("keypress", async (event) => {
       if (event.key === "Enter") {
         event.preventDefault();
-        await handleCardRename(event);
-        input.blur();
+        const button = document.querySelector(
+          `.card-edit-button[data-id="${input.dataset.id}"]`
+        );
+        if (button) await handleCardEditToggle(button);
       }
     });
   });
 }
 
-async function saveRenamedDomainNamesToJSON(updatedRenamedDomainNames) {
+async function handleCardEditToggle(button) {
+  const domainId = parseInt(button.dataset.id, 10);
+  const domain = allDomains.find((d) => d.id === domainId);
+  if (!domain) return;
+
+  if (editingCardIds.has(domainId)) {
+    const nameInput = document.querySelector(`.card-name-input[data-id="${domainId}"]`);
+    const descInput = document.querySelector(`.card-desc-input[data-id="${domainId}"]`);
+
+    const newName = nameInput ? nameInput.value.trim() : "";
+    const newDesc = descInput ? descInput.value.trim() : "";
+
+    if (newName && newName !== getStrippedDomainLabel(domain.domain_names?.[0])) {
+      renamedDomainNames[domainId] = newName;
+    } else {
+      delete renamedDomainNames[domainId];
+    }
+
+    if (newDesc) {
+      domainDescriptions[domainId] = newDesc;
+    } else {
+      delete domainDescriptions[domainId];
+    }
+
+    editingCardIds.delete(domainId);
+    await saveCardEditsToJSON(renamedDomainNames, domainDescriptions);
+    sortDomains(currentSortCriteria);
+  } else {
+    editingCardIds.add(domainId);
+  }
+
+  renderDashboard();
+  setupDragAndDrop();
+}
+
+async function saveCardEditsToJSON(updatedRenamedDomainNames, updatedDomainDescriptions) {
   try {
     await fetch("/save-settings", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ renamedDomainNames: updatedRenamedDomainNames }),
+      body: JSON.stringify({
+        renamedDomainNames: updatedRenamedDomainNames,
+        domainDescriptions: updatedDomainDescriptions,
+      }),
     });
   } catch (error) {
-    console.error("Error saving renamed domain names:", error);
+    console.error("Error saving card edits:", error);
   }
 }

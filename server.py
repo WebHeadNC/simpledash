@@ -41,7 +41,8 @@ DEFAULT_SETTINGS = {
     "maxColumns": 3,
     "groups": {},
     "renamedGroupNames": {},
-    "renamedDomainNames": {}
+    "renamedDomainNames": {},
+    "domainDescriptions": {}
 }
 
 cached_domains = {

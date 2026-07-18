@@ -51,6 +51,7 @@ async function setupEventListeners() {
       } else {
         editControls.classList.add("hidden");
         editButton.textContent = "Edit";
+        editingCardIds.clear();
       }
 
       renderDashboard();

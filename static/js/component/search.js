@@ -111,7 +111,12 @@ function performSearch(query) {
           domain.nginx_online && domain.enabled ? "online" : "offline";
         const matchesStatus = status.includes(lowerCaseQuery);
 
-        return matchesDomainName || matchesIP || matchesStatus;
+        const description = getDomainDescription(domain);
+        const matchesDescription = description
+          ? description.toLowerCase().includes(lowerCaseQuery)
+          : false;
+
+        return matchesDomainName || matchesIP || matchesStatus || matchesDescription;
       });
 
     if (groupMatches || filteredDomains.length > 0) {
