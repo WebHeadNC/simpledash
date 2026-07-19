@@ -78,7 +78,13 @@ async function fetchAndRender() {
     currentSettings = settings;
     currentSortCriteria = settings.sortBy || DEFAULT_SETTINGS.sortBy;
 
-    if (!groups[allServicesGroupName]) {
+    // Only for a genuinely fresh install with no groups at all yet. Checking just
+    // "is this specific group missing" instead was wrong: if a user later emptied and
+    // deleted their default group (fully valid, since delete only allows empty groups)
+    // while renamedGroupNames.allServices still pointed at its old name, this would
+    // resurrect it filled with every domain - duplicating ones already organized
+    // elsewhere. The ungrouped-domain check below already covers genuinely new domains.
+    if (Object.keys(groups).length === 0) {
       groups[allServicesGroupName] = allDomains.map((domain) => domain.id);
     }
 
@@ -151,9 +157,9 @@ function renderDashboard() {
   const dashboard = document.getElementById("dashboard");
   dashboard.innerHTML = "";
 
-  const visibleGroupNames = Object.keys(groups).filter(
-    (groupName) => editMode || groupName !== HIDDEN_GROUP_NAME
-  );
+  const visibleGroupNames = Object.keys(groups)
+    .filter((groupName) => editMode || groupName !== HIDDEN_GROUP_NAME)
+    .sort((a, b) => (a === HIDDEN_GROUP_NAME) - (b === HIDDEN_GROUP_NAME));
   updateGridTemplate(visibleGroupNames.length);
 
   visibleGroupNames.forEach((groupName) => {

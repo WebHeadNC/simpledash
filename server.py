@@ -16,6 +16,10 @@ import defusedxml.ElementTree as SafeET
 
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4MB hard cap on any request body
+# Flask's jsonify() alphabetizes dict keys by default, which silently destroyed the
+# user's actual group order (and drag-reorder position) on every page reload since
+# the client always receives groups back alphabetized instead of in save order.
+app.json.sort_keys = False
 
 def get_version_from_git():
     try:
