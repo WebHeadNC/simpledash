@@ -85,6 +85,29 @@ async function fetchAndRender() {
       await saveGroupsToJSON(groups);
     }
 
+    // Catch truly-new domains (added in NPM since the last save) that aren't in any
+    // group yet. Evaluated once here, right after a fresh settings fetch - not on every
+    // renderDashboard() call - so a stale/mismatched in-memory render never gets a chance
+    // to misjudge an already-grouped domain as "ungrouped" and silently persist a dupe.
+    const ungroupedDomains = allDomains.filter((domain) => {
+      return !Object.values(groups).some((group) => group.includes(domain.id));
+    });
+
+    if (ungroupedDomains.length > 0) {
+      const defaultGroup = "New Services";
+      if (!groups[defaultGroup]) {
+        groups[defaultGroup] = [];
+      }
+
+      ungroupedDomains.forEach((domain) => {
+        if (!groups[defaultGroup].includes(domain.id)) {
+          groups[defaultGroup].push(domain.id);
+        }
+      });
+
+      await saveGroupsToJSON(groups);
+    }
+
     document.getElementById("max-columns-toggle").textContent = `Columns: ${maxColumns}`;
     document.getElementById("toggle-inactive").textContent = showInactive
       ? "Hide Inactive Domains"
@@ -185,23 +208,6 @@ function renderDashboard() {
     groupContainer.appendChild(groupServices);
     dashboard.appendChild(groupContainer);
   });
-
-  const ungroupedDomains = allDomains.filter((domain) => {
-    return !Object.values(groups).some((group) => group.includes(domain.id));
-  });
-
-  if (ungroupedDomains.length > 0) {
-    const defaultGroup = "New Services";
-    if (!groups[defaultGroup]) {
-      groups[defaultGroup] = [];
-    }
-
-    ungroupedDomains.forEach((domain) => {
-      groups[defaultGroup].push(domain.id);
-    });
-
-    saveSettingsToJson();
-  }
 
   if (editMode) {
     setupGroupNameEditing();

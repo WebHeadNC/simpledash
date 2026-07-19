@@ -7,9 +7,10 @@ import subprocess
 import io
 import socket
 import ipaddress
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 import requests
 from PIL import Image, UnidentifiedImageError
+import re
 import xml.etree.ElementTree as ET
 import defusedxml.ElementTree as SafeET
 
@@ -60,6 +61,14 @@ ALLOWED_SVG_ATTRS = {
     "version", "preserveAspectRatio", "font-size", "font-family", "text-anchor",
 }
 SVG_CURRENTCOLOR_FALLBACK = "#6b7280"  # neutral gray, legible on both light and dark card surfaces
+# Presentation properties we allow through an inline style="" attribute (mirrors the
+# style-able subset of ALLOWED_SVG_ATTRS, plus clip-rule which has no attribute form).
+ALLOWED_SVG_STYLE_PROPS = {
+    "fill", "fill-rule", "fill-opacity", "clip-rule", "stroke", "stroke-width",
+    "stroke-linecap", "stroke-linejoin", "stroke-dasharray", "stroke-opacity",
+    "opacity", "stop-color", "stop-opacity", "clip-path", "mask",
+    "font-size", "font-family", "text-anchor",
+}
 
 DEFAULT_SETTINGS = {
     "theme": "light",
@@ -95,6 +104,7 @@ def load_settings():
 def save_settings(settings):
     """Save settings to the JSON file."""
     settings.pop("domains", None)
+    settings.pop("allDomains", None)
     with open(SETTINGS_FILE, "w") as f:
         json.dump(settings, f, indent=4)
 
@@ -158,8 +168,12 @@ def get_settings():
     cached_domains_result = get_cached_domains()
     if isinstance(cached_domains_result, dict) and "error" in cached_domains_result:
         return jsonify(cached_domains_result), 500
-    settings["allDomains"] = cached_domains_result
-    return jsonify(settings)
+    # Build the response as a copy rather than mutating the shared `settings` dict -
+    # that dict is written back to settings.json verbatim by every other save route, so
+    # assigning into it here was leaking a stale allDomains snapshot into persisted state.
+    response_settings = dict(settings)
+    response_settings["allDomains"] = cached_domains_result
+    return jsonify(response_settings)
 
 @app.route("/save-settings", methods=["POST"])
 def update_settings():
@@ -204,6 +218,29 @@ def refresh_domains():
 def _svg_local_name(tag):
     return tag.split("}")[-1] if "}" in tag else tag
 
+def _sanitize_svg_style(style_value):
+    """Many real-world SVG exports (Illustrator, selfhst icon set, etc.) put presentation
+    properties like fill in a style="" attribute instead of a fill="" attribute. Dropping
+    style entirely (as an unrecognized attribute) silently loses that color info, so parse
+    it and keep only known-safe declarations rather than allowlisting the whole attribute."""
+    declarations = []
+    for decl in style_value.split(";"):
+        if ":" not in decl:
+            continue
+        prop, _, value = decl.partition(":")
+        prop = prop.strip().lower()
+        value = value.strip()
+        if prop not in ALLOWED_SVG_STYLE_PROPS or not value:
+            continue
+        if "javascript:" in value.lower():
+            continue
+        if "url(" in value.lower() and not re.match(r"^url\(\s*#", value, re.IGNORECASE):
+            continue
+        if prop in ("fill", "stroke") and value.lower() == "currentcolor":
+            value = SVG_CURRENTCOLOR_FALLBACK
+        declarations.append(f"{prop}:{value}")
+    return ";".join(declarations)
+
 def sanitize_svg(svg_bytes):
     """Safely parse untrusted SVG (defusedxml blocks XXE/entity-expansion attacks
     during parsing itself) and rebuild it from an allowlist of known-safe elements
@@ -233,6 +270,11 @@ def sanitize_svg(svg_bytes):
             if lname == "href":
                 if value.startswith("#"):
                     new_el.set("href", value)
+                continue
+            if lname == "style":
+                sanitized_style = _sanitize_svg_style(value)
+                if sanitized_style:
+                    new_el.set("style", sanitized_style)
                 continue
             if attr_name in ALLOWED_SVG_ATTRS and "javascript:" not in value.lower():
                 if lname in ("fill", "stroke") and value.strip().lower() == "currentcolor":
@@ -463,6 +505,11 @@ def serve_frontend():
         html_content = f.read()
 
     html_content = html_content.replace("{{theme}}", saved_theme)
+    # Cache-bust static JS/CSS with the running image's version so a browser tab
+    # left open across a docker update can't end up executing a stale-cached JS
+    # file (e.g. main.js) alongside a freshly-fetched one (e.g. card.js) - that
+    # kind of mismatched-version combo is what silently corrupted saved groups.
+    html_content = html_content.replace("{{v}}", quote(APP_VERSION or "dev", safe=""))
     return html_content
 
 @app.route("/<path:path>")
