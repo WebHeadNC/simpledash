@@ -1,5 +1,9 @@
 let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions, domainIcons;
 let editingCardIds = new Set();
+// Ephemeral, per-session only: bumped whenever an icon is uploaded/fetched so the
+// <img> src changes even though the filename (always <domain_id>.<ext>) doesn't -
+// otherwise the browser can keep serving the old cached image after a remove+re-add.
+let iconCacheBust = {};
 
 // Resolved once with the single initial /settings fetch, so every other module
 // can read the same response instead of each firing its own fetch on load.

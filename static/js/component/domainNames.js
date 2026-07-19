@@ -140,6 +140,7 @@ async function uploadCardIcon(domainId, file) {
     }
 
     domainIcons[domainId] = result.icon;
+    iconCacheBust[domainId] = Date.now();
     renderDashboard();
     setupDragAndDrop();
   } catch (error) {
@@ -164,6 +165,7 @@ async function fetchCardIconFromUrl(domainId, url) {
     }
 
     domainIcons[domainId] = result.icon;
+    iconCacheBust[domainId] = Date.now();
     renderDashboard();
     setupDragAndDrop();
   } catch (error) {

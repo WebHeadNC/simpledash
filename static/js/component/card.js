@@ -3,6 +3,11 @@ const PENCIL_ICON_SVG =
 const CHECK_ICON_SVG =
   '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>';
 
+function getIconUrl(domainId, iconFilename) {
+  const cacheBust = iconCacheBust[domainId] ? `?v=${iconCacheBust[domainId]}` : "";
+  return `/icons/${iconFilename}${cacheBust}`;
+}
+
 function createCard(domain, editMode, isEditingCard) {
   const card = document.createElement("div");
   card.className = "card";
@@ -28,7 +33,7 @@ function createCard(domain, editMode, isEditingCard) {
   if (iconFilename) {
     indicator = document.createElement("img");
     indicator.className = `card-icon${isUnhealthy ? " unhealthy" : ""}`;
-    indicator.src = `/icons/${iconFilename}`;
+    indicator.src = getIconUrl(domain.id, iconFilename);
     indicator.alt = "";
   } else {
     indicator = document.createElement("span");
@@ -117,7 +122,7 @@ function buildIconControls(domain, iconFilename) {
   const preview = document.createElement("img");
   preview.className = "card-icon-controls-preview";
   if (iconFilename) {
-    preview.src = `/icons/${iconFilename}`;
+    preview.src = getIconUrl(domain.id, iconFilename);
   } else {
     preview.classList.add("empty");
   }
@@ -131,7 +136,7 @@ function buildIconControls(domain, iconFilename) {
   fileInput.type = "file";
   fileInput.className = "card-icon-file-input";
   fileInput.dataset.id = domain.id;
-  fileInput.accept = "image/png,image/jpeg,image/gif,image/webp,image/bmp,image/x-icon";
+  fileInput.accept = "image/png,image/jpeg,image/gif,image/webp,image/bmp,image/x-icon,image/svg+xml";
   fileInput.hidden = true;
   uploadLabel.appendChild(fileInput);
   controls.appendChild(uploadLabel);

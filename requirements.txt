@@ -2,3 +2,4 @@ Flask
 Waitress
 Pillow
 requests
+defusedxml

@@ -10,6 +10,8 @@ import ipaddress
 from urllib.parse import urlparse
 import requests
 from PIL import Image, UnidentifiedImageError
+import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as SafeET
 
 app = Flask(__name__, static_folder="static")
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024  # 4MB hard cap on any request body
@@ -43,6 +45,20 @@ print(f"Icons Dir: {ICONS_DIR}")
 ALLOWED_THEMES = {"light", "dark", "midnight", "terminal"}
 ALLOWED_ICON_FORMATS = {"PNG", "JPEG", "GIF", "WEBP", "BMP", "ICO"}
 MAX_ICON_BYTES = 2 * 1024 * 1024  # 2MB
+
+ALLOWED_SVG_TAGS = {
+    "svg", "g", "path", "circle", "ellipse", "line", "polyline", "polygon",
+    "rect", "text", "tspan", "defs", "clipPath", "mask", "symbol", "use",
+    "linearGradient", "radialGradient", "stop", "title", "desc",
+}
+ALLOWED_SVG_ATTRS = {
+    "id", "class", "viewBox", "width", "height", "x", "y", "x1", "y1", "x2", "y2",
+    "cx", "cy", "r", "rx", "ry", "d", "points", "transform", "fill", "fill-rule",
+    "fill-opacity", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin",
+    "stroke-dasharray", "stroke-opacity", "opacity", "offset", "stop-color",
+    "stop-opacity", "gradientUnits", "gradientTransform", "clip-path", "mask",
+    "version", "preserveAspectRatio", "font-size", "font-family", "text-anchor",
+}
 
 DEFAULT_SETTINGS = {
     "theme": "light",
@@ -184,27 +200,99 @@ def refresh_domains():
         return jsonify(refresh_result), 500
     return jsonify({"message": "Domains refreshed successfully", "allDomains": refresh_result})
 
-def validate_and_save_icon(image_bytes, domain_id):
-    """Verify image_bytes is a genuine image and re-encode it to PNG before saving.
+def _svg_local_name(tag):
+    return tag.split("}")[-1] if "}" in tag else tag
 
-    Re-encoding (rather than trusting the uploaded bytes as-is) strips any embedded
-    scripts/metadata and rejects disguised non-image files regardless of claimed
-    extension or content-type - Pillow will only successfully re-save real pixel data.
-    """
+def sanitize_svg(svg_bytes):
+    """Safely parse untrusted SVG (defusedxml blocks XXE/entity-expansion attacks
+    during parsing itself) and rebuild it from an allowlist of known-safe elements
+    and attributes. Drops <script>, event handler attributes (onload, onclick, ...),
+    <style>, and any href/xlink:href that isn't an internal "#fragment" reference -
+    external references and inline script are the two things that make SVG riskier
+    than raster formats to accept from users."""
+    try:
+        root = SafeET.fromstring(svg_bytes)
+    except Exception:
+        raise ValueError("File is not valid SVG")
+
+    if _svg_local_name(root.tag) != "svg":
+        raise ValueError("File is not an SVG image")
+
+    def clean(el, is_root=False):
+        tag = _svg_local_name(el.tag)
+        if tag not in ALLOWED_SVG_TAGS:
+            return None
+
+        new_el = ET.Element(tag)
+        for key, value in el.attrib.items():
+            attr_name = _svg_local_name(key)
+            lname = attr_name.lower()
+            if lname.startswith("on"):
+                continue
+            if lname == "href":
+                if value.startswith("#"):
+                    new_el.set("href", value)
+                continue
+            if attr_name in ALLOWED_SVG_ATTRS and "javascript:" not in value.lower():
+                new_el.set(attr_name, value)
+
+        if is_root:
+            new_el.set("xmlns", "http://www.w3.org/2000/svg")
+
+        if el.text and el.text.strip():
+            new_el.text = el.text
+
+        for child in el:
+            cleaned_child = clean(child)
+            if cleaned_child is not None:
+                new_el.append(cleaned_child)
+
+        return new_el
+
+    cleaned_root = clean(root, is_root=True)
+    if cleaned_root is None:
+        raise ValueError("SVG has no safe content")
+
+    return '<?xml version="1.0" encoding="UTF-8"?>\n' + ET.tostring(cleaned_root, encoding="unicode")
+
+def remove_existing_icon_file(domain_id):
+    """Delete any previously stored icon for this domain, regardless of its
+    extension - needed because switching between a raster icon and an SVG icon
+    changes the filename, which would otherwise orphan the old file."""
+    existing = settings.get("domainIcons", {}).get(str(domain_id))
+    if existing:
+        existing_path = os.path.join(ICONS_DIR, existing)
+        if os.path.exists(existing_path):
+            os.remove(existing_path)
+
+def validate_and_save_icon(image_bytes, domain_id):
+    """Validate and store an icon. Raster images are re-encoded to PNG via Pillow
+    (which strips any embedded scripts/metadata and rejects disguised non-image
+    files, regardless of claimed extension or content-type - Pillow will only
+    successfully re-save real pixel data). SVG is handled separately by sanitize_svg
+    since Pillow can't decode vector formats."""
     try:
         img = Image.open(io.BytesIO(image_bytes))
         img.load()
+        is_raster = True
     except (UnidentifiedImageError, OSError):
-        raise ValueError("File is not a valid image")
+        is_raster = False
 
-    if img.format not in ALLOWED_ICON_FORMATS:
-        raise ValueError("Unsupported image format")
+    remove_existing_icon_file(domain_id)
 
-    img = img.convert("RGBA")
-    img.thumbnail((256, 256))
+    if is_raster:
+        if img.format not in ALLOWED_ICON_FORMATS:
+            raise ValueError("Unsupported image format")
+        img = img.convert("RGBA")
+        img.thumbnail((256, 256))
+        filename = f"{domain_id}.png"
+        img.save(os.path.join(ICONS_DIR, filename), format="PNG")
+        return filename
 
-    filename = f"{domain_id}.png"
-    img.save(os.path.join(ICONS_DIR, filename), format="PNG")
+    sanitized_svg = sanitize_svg(image_bytes)
+    filename = f"{domain_id}.svg"
+    with open(os.path.join(ICONS_DIR, filename), "w", encoding="utf-8") as f:
+        f.write(sanitized_svg)
     return filename
 
 def is_safe_icon_url(url):
@@ -334,7 +422,14 @@ def remove_icon():
 @app.route("/icons/<path:filename>")
 def serve_icon(filename):
     """Serve a stored per-domain icon."""
-    return send_from_directory(ICONS_DIR, filename)
+    response = send_from_directory(ICONS_DIR, filename)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    if filename.lower().endswith(".svg"):
+        # Belt-and-suspenders on top of sanitize_svg(): even if a browser is
+        # navigated to this URL directly (not via <img>, where SVG scripts
+        # already can't execute), this blocks script execution outright.
+        response.headers["Content-Security-Policy"] = "script-src 'none'; sandbox"
+    return response
 
 @app.route("/")
 def serve_frontend():
