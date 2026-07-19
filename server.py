@@ -81,7 +81,8 @@ DEFAULT_SETTINGS = {
     "renamedGroupNames": {},
     "renamedDomainNames": {},
     "domainDescriptions": {},
-    "domainIcons": {}
+    "domainIcons": {},
+    "domainIconContrastBg": {}
 }
 
 cached_domains = {

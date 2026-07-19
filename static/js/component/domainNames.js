@@ -18,6 +18,10 @@ function getDomainIcon(domain) {
   return domain && domainIcons ? domainIcons[domain.id] : undefined;
 }
 
+function getDomainIconContrastBg(domain) {
+  return !!(domain && domainIconContrastBg && domainIconContrastBg[domain.id]);
+}
+
 function setupCardEditButtons() {
   document.querySelectorAll(".card-edit-button").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -115,6 +119,12 @@ function setupCardIconControls() {
       await removeCardIcon(button.dataset.id);
     });
   });
+
+  document.querySelectorAll(".card-icon-contrast-checkbox").forEach((checkbox) => {
+    checkbox.addEventListener("change", async (event) => {
+      await toggleCardIconContrastBg(checkbox.dataset.id, event.target.checked);
+    });
+  });
 }
 
 function setCardIconStatus(domainId, message, isError) {
@@ -187,4 +197,26 @@ async function removeCardIcon(domainId) {
   } catch (error) {
     console.error("Error removing icon:", error);
   }
+}
+
+async function toggleCardIconContrastBg(domainId, enabled) {
+  const numericId = parseInt(domainId, 10);
+  if (enabled) {
+    domainIconContrastBg[numericId] = true;
+  } else {
+    delete domainIconContrastBg[numericId];
+  }
+
+  try {
+    await fetch("/save-settings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domainIconContrastBg }),
+    });
+  } catch (error) {
+    console.error("Error saving icon contrast background setting:", error);
+  }
+
+  renderDashboard();
+  setupDragAndDrop();
 }

@@ -15,6 +15,7 @@
   --shadow-dark: rgba(0, 0, 0, 0.7);
   --drop-zone-color: #9ca3af;
   --drop-zone-highlight-bg: #e5e7eb;
+  --icon-contrast-bg: #1a1f27;
   --base-spacing: 1rem;
   --transition-speed: 0.2s;
   --mono-font: "Source Code Pro", ui-monospace, "SF Mono", "Cascadia Code",
@@ -403,6 +404,17 @@ main {
 .card-icon-controls-preview.empty {
   border-style: dashed;
 }
+.card-icon-contrast-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.card-icon-contrast-toggle input {
+  cursor: pointer;
+}
 .card-icon-upload-label {
   font-size: 0.7rem;
   color: var(--text-muted);
@@ -495,6 +507,9 @@ main {
   flex: none;
   object-fit: cover;
   background: var(--surface);
+}
+.card-icon-contrast-bg {
+  background: var(--icon-contrast-bg);
 }
 .card-icon.unhealthy {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 55%, transparent);

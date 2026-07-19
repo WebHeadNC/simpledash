@@ -1,4 +1,4 @@
-let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions, domainIcons;
+let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions, domainIcons, domainIconContrastBg;
 let editingCardIds = new Set();
 // Ephemeral, per-session only: bumped whenever an icon is uploaded/fetched so the
 // <img> src changes even though the filename (always <domain_id>.<ext>) doesn't -
@@ -24,6 +24,7 @@ const DEFAULT_SETTINGS = {
   renamedDomainNames: {},
   domainDescriptions: {},
   domainIcons: {},
+  domainIconContrastBg: {},
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -73,6 +74,7 @@ async function fetchAndRender() {
     renamedDomainNames = settings.renamedDomainNames || DEFAULT_SETTINGS.renamedDomainNames;
     domainDescriptions = settings.domainDescriptions || DEFAULT_SETTINGS.domainDescriptions;
     domainIcons = settings.domainIcons || DEFAULT_SETTINGS.domainIcons;
+    domainIconContrastBg = settings.domainIconContrastBg || DEFAULT_SETTINGS.domainIconContrastBg;
     currentSettings = settings;
     currentSortCriteria = settings.sortBy || DEFAULT_SETTINGS.sortBy;
 

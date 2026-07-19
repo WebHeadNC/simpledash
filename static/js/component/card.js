@@ -32,7 +32,9 @@ function createCard(domain, editMode, isEditingCard) {
   let indicator;
   if (iconFilename) {
     indicator = document.createElement("img");
-    indicator.className = `card-icon${isUnhealthy ? " unhealthy" : ""}`;
+    indicator.className = `card-icon${isUnhealthy ? " unhealthy" : ""}${
+      getDomainIconContrastBg(domain) ? " card-icon-contrast-bg" : ""
+    }`;
     indicator.src = getIconUrl(domain.id, iconFilename);
     indicator.alt = "";
   } else {
@@ -123,6 +125,9 @@ function buildIconControls(domain, iconFilename) {
   preview.className = "card-icon-controls-preview";
   if (iconFilename) {
     preview.src = getIconUrl(domain.id, iconFilename);
+    if (getDomainIconContrastBg(domain)) {
+      preview.classList.add("card-icon-contrast-bg");
+    }
   } else {
     preview.classList.add("empty");
   }
@@ -163,6 +168,18 @@ function buildIconControls(domain, iconFilename) {
     removeButton.dataset.id = domain.id;
     removeButton.textContent = "Remove";
     controls.appendChild(removeButton);
+
+    const contrastLabel = document.createElement("label");
+    contrastLabel.className = "card-icon-contrast-toggle";
+
+    const contrastCheckbox = document.createElement("input");
+    contrastCheckbox.type = "checkbox";
+    contrastCheckbox.className = "card-icon-contrast-checkbox";
+    contrastCheckbox.dataset.id = domain.id;
+    contrastCheckbox.checked = getDomainIconContrastBg(domain);
+    contrastLabel.appendChild(contrastCheckbox);
+    contrastLabel.appendChild(document.createTextNode("Contrast bg"));
+    controls.appendChild(contrastLabel);
   }
 
   const statusEl = document.createElement("span");

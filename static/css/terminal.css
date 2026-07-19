@@ -10,6 +10,7 @@ body.terminal {
   --text-dark: #ffffff;
   --text-muted: #cccccc;
   --border-color: #333333;
+  --icon-contrast-bg: #f4f5f7;
   --transition-speed: 0.15s;
 
   font-family: "Source Code Pro", monospace;
