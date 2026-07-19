@@ -79,6 +79,10 @@ function applySettings(updatedKeys = Object.keys(currentSettings)) {
         domainDescriptions = value || {};
         break;
 
+      case "domainIcons":
+        domainIcons = value || {};
+        break;
+
       default:
         console.warn(`Unhandled setting key: "${key}"`);
     }

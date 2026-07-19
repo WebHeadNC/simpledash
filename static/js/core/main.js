@@ -1,4 +1,4 @@
-let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions;
+let showInactive, showSearch, allDomains, editMode, groups, allServicesGroupName, maxColumns, currentSortCriteria, renamedDomainNames, renamedGroupNames, domainDescriptions, domainIcons;
 let editingCardIds = new Set();
 
 // Resolved once with the single initial /settings fetch, so every other module
@@ -19,6 +19,7 @@ const DEFAULT_SETTINGS = {
   renamedGroupNames: { allServices: "New Services" },
   renamedDomainNames: {},
   domainDescriptions: {},
+  domainIcons: {},
 };
 
 document.addEventListener("DOMContentLoaded", async () => {
@@ -67,6 +68,7 @@ async function fetchAndRender() {
     allServicesGroupName = renamedGroupNames.allServices || DEFAULT_SETTINGS.renamedGroupNames.allServices;
     renamedDomainNames = settings.renamedDomainNames || DEFAULT_SETTINGS.renamedDomainNames;
     domainDescriptions = settings.domainDescriptions || DEFAULT_SETTINGS.domainDescriptions;
+    domainIcons = settings.domainIcons || DEFAULT_SETTINGS.domainIcons;
     currentSettings = settings;
     currentSortCriteria = settings.sortBy || DEFAULT_SETTINGS.sortBy;
 
@@ -201,6 +203,7 @@ function renderDashboard() {
     setupGroupNameEditing();
     setupDeleteGroupButtons();
     setupCardEditButtons();
+    setupCardIconControls();
   }
 
   setupDragAndDrop();
@@ -216,6 +219,7 @@ async function saveSettingsToJson() {
     renamedGroupNames: { allServices: allServicesGroupName },
     renamedDomainNames,
     domainDescriptions,
+    domainIcons,
   };
 
   try {

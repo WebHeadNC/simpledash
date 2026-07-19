@@ -384,6 +384,82 @@ main {
   color: var(--primary-color);
   background: color-mix(in srgb, var(--primary-color) 12%, transparent);
 }
+.card-icon-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.4rem 0 0 1.2rem;
+}
+.card-icon-controls-preview {
+  width: 26px;
+  height: 26px;
+  border-radius: 5px;
+  object-fit: cover;
+  flex: none;
+  background: var(--bg-light);
+  border: 1px solid var(--border-color);
+}
+.card-icon-controls-preview.empty {
+  border-style: dashed;
+}
+.card-icon-upload-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: border-color var(--transition-speed), color var(--transition-speed);
+}
+.card-icon-upload-label:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.card-icon-url-input {
+  flex: 1;
+  min-width: 100px;
+  font-size: 0.75rem;
+  color: var(--text-dark);
+  background: transparent;
+  border: none;
+  border-bottom: 1px dashed var(--border-color);
+  padding: 0.25rem 0;
+}
+.card-icon-url-input:focus {
+  outline: none;
+  border-bottom-color: var(--primary-color);
+}
+.card-icon-url-input::placeholder {
+  color: var(--text-muted);
+}
+.card-icon-fetch-button,
+.card-icon-remove-button {
+  flex: none;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.25rem 0.5rem;
+  cursor: pointer;
+  transition: border-color var(--transition-speed), color var(--transition-speed);
+}
+.card-icon-fetch-button:hover {
+  border-color: var(--primary-color);
+  color: var(--primary-color);
+}
+.card-icon-remove-button:hover {
+  border-color: var(--danger-color);
+  color: var(--danger-color);
+}
+.card-icon-status {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+.card-icon-status.error {
+  color: var(--danger-color);
+}
 .status-dot {
   width: 12px;
   height: 12px;
@@ -410,6 +486,27 @@ main {
   50% {
     box-shadow: 0 0 5px 1px color-mix(in srgb, var(--highlight-color) 45%, transparent),
       inset 0 0 0 1px rgba(0, 0, 0, 0.15);
+  }
+}
+.card-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  flex: none;
+  object-fit: cover;
+  background: var(--bg-light);
+}
+.card-icon.unhealthy {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 55%, transparent);
+  animation: icon-glow 2.4s ease-in-out infinite;
+}
+@keyframes icon-glow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 35%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 8px 3px color-mix(in srgb, var(--danger-color) 55%, transparent);
   }
 }
 .drop-zone {

@@ -1,2 +1,6 @@
 /app/
 /nginx/
+__pycache__/
+*.pyc
+venv/
+.venv/

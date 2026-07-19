@@ -14,6 +14,10 @@ function getDomainDescription(domain) {
   return domain && domainDescriptions ? domainDescriptions[domain.id] : undefined;
 }
 
+function getDomainIcon(domain) {
+  return domain && domainIcons ? domainIcons[domain.id] : undefined;
+}
+
 function setupCardEditButtons() {
   document.querySelectorAll(".card-edit-button").forEach((button) => {
     button.addEventListener("click", async (event) => {
@@ -84,5 +88,101 @@ async function saveCardEditsToJSON(updatedRenamedDomainNames, updatedDomainDescr
     });
   } catch (error) {
     console.error("Error saving card edits:", error);
+  }
+}
+
+function setupCardIconControls() {
+  document.querySelectorAll(".card-icon-file-input").forEach((input) => {
+    input.addEventListener("change", async (event) => {
+      const file = event.target.files[0];
+      if (file) await uploadCardIcon(input.dataset.id, file);
+    });
+  });
+
+  document.querySelectorAll(".card-icon-fetch-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.preventDefault();
+      const domainId = button.dataset.id;
+      const urlInput = document.querySelector(`.card-icon-url-input[data-id="${domainId}"]`);
+      const url = urlInput ? urlInput.value.trim() : "";
+      if (url) await fetchCardIconFromUrl(domainId, url);
+    });
+  });
+
+  document.querySelectorAll(".card-icon-remove-button").forEach((button) => {
+    button.addEventListener("click", async (event) => {
+      event.preventDefault();
+      await removeCardIcon(button.dataset.id);
+    });
+  });
+}
+
+function setCardIconStatus(domainId, message, isError) {
+  const statusEl = document.querySelector(`.card-icon-status[data-id="${domainId}"]`);
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.classList.toggle("error", !!isError);
+}
+
+async function uploadCardIcon(domainId, file) {
+  setCardIconStatus(domainId, "Uploading…", false);
+  try {
+    const formData = new FormData();
+    formData.append("domain_id", domainId);
+    formData.append("icon", file);
+
+    const response = await fetch("/upload-icon", { method: "POST", body: formData });
+    const result = await response.json();
+
+    if (!response.ok) {
+      setCardIconStatus(domainId, result.error || "Upload failed", true);
+      return;
+    }
+
+    domainIcons[domainId] = result.icon;
+    renderDashboard();
+    setupDragAndDrop();
+  } catch (error) {
+    console.error("Error uploading icon:", error);
+    setCardIconStatus(domainId, "Upload failed", true);
+  }
+}
+
+async function fetchCardIconFromUrl(domainId, url) {
+  setCardIconStatus(domainId, "Fetching…", false);
+  try {
+    const response = await fetch("/fetch-icon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain_id: domainId, url }),
+    });
+    const result = await response.json();
+
+    if (!response.ok) {
+      setCardIconStatus(domainId, result.error || "Fetch failed", true);
+      return;
+    }
+
+    domainIcons[domainId] = result.icon;
+    renderDashboard();
+    setupDragAndDrop();
+  } catch (error) {
+    console.error("Error fetching icon:", error);
+    setCardIconStatus(domainId, "Fetch failed", true);
+  }
+}
+
+async function removeCardIcon(domainId) {
+  try {
+    await fetch("/remove-icon", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ domain_id: domainId }),
+    });
+    delete domainIcons[domainId];
+    renderDashboard();
+    setupDragAndDrop();
+  } catch (error) {
+    console.error("Error removing icon:", error);
   }
 }

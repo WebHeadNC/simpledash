@@ -10,4 +10,4 @@ RUN if [ -d "/app/.git" ]; then echo ".git directory copied successfully"; else 
 RUN mkdir -p /app/data
 RUN pip install --no-cache-dir -r /app/requirements.txt
 EXPOSE 8080
-CMD ["waitress-serve", "--host=0.0.0.0", "--port=8080", "server:app"]
+CMD ["waitress-serve", "--host=0.0.0.0", "--port=8080", "--threads=16", "server:app"]

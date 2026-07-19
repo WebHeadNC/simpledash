@@ -21,9 +21,20 @@ function createCard(domain, editMode, isEditingCard) {
   const row = document.createElement("div");
   row.className = "card-row";
 
-  const led = document.createElement("span");
-  led.className = `status-dot ${statusClass}`;
-  row.appendChild(led);
+  const iconFilename = getDomainIcon(domain);
+  const isUnhealthy = statusClass !== "green";
+
+  let indicator;
+  if (iconFilename) {
+    indicator = document.createElement("img");
+    indicator.className = `card-icon${isUnhealthy ? " unhealthy" : ""}`;
+    indicator.src = `/icons/${iconFilename}`;
+    indicator.alt = "";
+  } else {
+    indicator = document.createElement("span");
+    indicator.className = `status-dot ${statusClass}`;
+  }
+  row.appendChild(indicator);
 
   const displayName = getDomainDisplayName(domain);
   const description = getDomainDescription(domain);
@@ -62,6 +73,8 @@ function createCard(domain, editMode, isEditingCard) {
   card.appendChild(row);
 
   if (editMode && isEditingCard) {
+    card.appendChild(buildIconControls(domain, iconFilename));
+
     const descInput = document.createElement("input");
     descInput.className = "card-desc-input";
     descInput.dataset.id = domain.id;
@@ -95,4 +108,62 @@ function createCard(domain, editMode, isEditingCard) {
   }
 
   return card;
+}
+
+function buildIconControls(domain, iconFilename) {
+  const controls = document.createElement("div");
+  controls.className = "card-icon-controls";
+
+  const preview = document.createElement("img");
+  preview.className = "card-icon-controls-preview";
+  if (iconFilename) {
+    preview.src = `/icons/${iconFilename}`;
+  } else {
+    preview.classList.add("empty");
+  }
+  controls.appendChild(preview);
+
+  const uploadLabel = document.createElement("label");
+  uploadLabel.className = "card-icon-upload-label";
+  uploadLabel.textContent = "Upload";
+
+  const fileInput = document.createElement("input");
+  fileInput.type = "file";
+  fileInput.className = "card-icon-file-input";
+  fileInput.dataset.id = domain.id;
+  fileInput.accept = "image/png,image/jpeg,image/gif,image/webp,image/bmp,image/x-icon";
+  fileInput.hidden = true;
+  uploadLabel.appendChild(fileInput);
+  controls.appendChild(uploadLabel);
+
+  const urlInput = document.createElement("input");
+  urlInput.type = "text";
+  urlInput.className = "card-icon-url-input";
+  urlInput.dataset.id = domain.id;
+  urlInput.placeholder = "or paste an icon URL";
+  urlInput.draggable = false;
+  controls.appendChild(urlInput);
+
+  const fetchButton = document.createElement("button");
+  fetchButton.type = "button";
+  fetchButton.className = "card-icon-fetch-button";
+  fetchButton.dataset.id = domain.id;
+  fetchButton.textContent = "Fetch";
+  controls.appendChild(fetchButton);
+
+  if (iconFilename) {
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "card-icon-remove-button";
+    removeButton.dataset.id = domain.id;
+    removeButton.textContent = "Remove";
+    controls.appendChild(removeButton);
+  }
+
+  const statusEl = document.createElement("span");
+  statusEl.className = "card-icon-status";
+  statusEl.dataset.id = domain.id;
+  controls.appendChild(statusEl);
+
+  return controls;
 }
