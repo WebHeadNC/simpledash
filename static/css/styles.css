@@ -397,7 +397,7 @@ main {
   border-radius: 5px;
   object-fit: cover;
   flex: none;
-  background: var(--bg-light);
+  background: var(--surface);
   border: 1px solid var(--border-color);
 }
 .card-icon-controls-preview.empty {
@@ -494,7 +494,7 @@ main {
   border-radius: 5px;
   flex: none;
   object-fit: cover;
-  background: var(--bg-light);
+  background: var(--surface);
 }
 .card-icon.unhealthy {
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger-color) 55%, transparent);

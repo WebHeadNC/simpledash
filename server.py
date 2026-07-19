@@ -59,6 +59,7 @@ ALLOWED_SVG_ATTRS = {
     "stop-opacity", "gradientUnits", "gradientTransform", "clip-path", "mask",
     "version", "preserveAspectRatio", "font-size", "font-family", "text-anchor",
 }
+SVG_CURRENTCOLOR_FALLBACK = "#6b7280"  # neutral gray, legible on both light and dark card surfaces
 
 DEFAULT_SETTINGS = {
     "theme": "light",
@@ -234,6 +235,13 @@ def sanitize_svg(svg_bytes):
                     new_el.set("href", value)
                 continue
             if attr_name in ALLOWED_SVG_ATTRS and "javascript:" not in value.lower():
+                if lname in ("fill", "stroke") and value.strip().lower() == "currentcolor":
+                    # currentColor is meaningless for an SVG loaded standalone via
+                    # <img src> (no external CSS context to inherit from) - it would
+                    # otherwise silently resolve to black, which is how most icon
+                    # sets built around currentColor (Heroicons, Feather, etc.) end
+                    # up rendering as solid black squares.
+                    value = SVG_CURRENTCOLOR_FALLBACK
                 new_el.set(attr_name, value)
 
         if is_root:
@@ -284,6 +292,15 @@ def validate_and_save_icon(image_bytes, domain_id):
         if img.format not in ALLOWED_ICON_FORMATS:
             raise ValueError("Unsupported image format")
         img = img.convert("RGBA")
+        # Many real-world icon files have significant transparent padding around
+        # the actual graphic (e.g. a 100x100 logo centered in a 512x512 canvas).
+        # object-fit: cover scales the *whole* canvas to fill the small icon slot,
+        # so uncropped padding makes the visible logo render as a tiny speck. Crop
+        # to the bounding box of non-transparent content first so it actually fills
+        # the icon.
+        bbox = img.getbbox()
+        if bbox:
+            img = img.crop(bbox)
         img.thumbnail((256, 256))
         filename = f"{domain_id}.png"
         img.save(os.path.join(ICONS_DIR, filename), format="PNG")
