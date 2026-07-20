@@ -2,6 +2,8 @@ const PENCIL_ICON_SVG =
   '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 2.5l2 2L5 13l-2.6.6.6-2.6L11.5 2.5z"/></svg>';
 const CHECK_ICON_SVG =
   '<svg viewBox="0 0 16 16" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3 3 7-7"/></svg>';
+const ADDR_ICON_SVG =
+  '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6.5"/><path d="M8 7.2v3.6M8 5v.01"/></svg>';
 
 function getIconUrl(domainId, iconFilename) {
   const cacheBust = iconCacheBust[domainId] ? `?v=${iconCacheBust[domainId]}` : "";
@@ -62,6 +64,8 @@ function createCard(domain, editMode, isEditingCard) {
   const addrEl = document.createElement("span");
   addrEl.className = "card-addr";
   addrEl.textContent = hostPort;
+  addrEl.title = hostPort;
+  addrEl.dataset.fullAddr = hostPort;
   row.appendChild(addrEl);
 
   if (editMode) {
@@ -188,4 +192,35 @@ function buildIconControls(domain, iconFilename) {
   controls.appendChild(statusEl);
 
   return controls;
+}
+
+// The address only has flex-shrink room after the icon and (never-shrinking) name
+// claim theirs, so how much of it fits varies per card, not just per group panel
+// width - a pure CSS width breakpoint can't express that. Swap the clipped text
+// for a small icon with the full address in its title/tooltip instead, and only
+// as a last resort - if the name alone still doesn't fit even next to the
+// already-compacted icon - let the name wrap onto a second line.
+function compactOverflowingAddrs() {
+  document.querySelectorAll(".card-row").forEach((row) => {
+    const addr = row.querySelector(".card-addr");
+    const nameEl = row.querySelector("h3");
+    if (!addr) return;
+
+    const full = addr.dataset.fullAddr;
+    if (full) {
+      addr.classList.remove("compact");
+      addr.textContent = full;
+      if (addr.scrollWidth > addr.clientWidth) {
+        addr.classList.add("compact");
+        addr.innerHTML = ADDR_ICON_SVG;
+      }
+    }
+
+    if (nameEl) {
+      nameEl.classList.remove("card-name-wrap");
+      if (row.scrollWidth > row.clientWidth) {
+        nameEl.classList.add("card-name-wrap");
+      }
+    }
+  });
 }

@@ -225,6 +225,18 @@ function renderDashboard() {
   }
 
   setupDragAndDrop();
+  compactOverflowingAddrs();
+}
+
+// Catches panel-width changes renderDashboard() itself doesn't run for, e.g. the
+// user just resizing the browser window without touching any dashboard control.
+let addrResizeObserver;
+function setupAddrResizeObserver() {
+  if (addrResizeObserver) return;
+  addrResizeObserver = new ResizeObserver(() => {
+    requestAnimationFrame(compactOverflowingAddrs);
+  });
+  addrResizeObserver.observe(document.getElementById("dashboard"));
 }
 
 async function saveSettingsToJson() {
@@ -255,4 +267,18 @@ async function saveSettingsToJson() {
   }
 }
 
-fetchAndRender();
+// Deferred to DOMContentLoaded rather than called inline: this script tag runs
+// before the later ones (sorting.js, card.js, ...) have loaded, and normally the
+// /settings network round-trip takes long enough that they finish loading before
+// this resolves - but a fast enough response can win that race and crash
+// fetchAndRender partway through with a ReferenceError, leaving a blank dashboard.
+// By DOMContentLoaded every script tag in the document has already run.
+document.addEventListener("DOMContentLoaded", () => {
+  fetchAndRender();
+  setupAddrResizeObserver();
+  // Custom webfonts (Inter, Source Code Pro) can still be loading at first render,
+  // so the very first name/address width measurement can be taken against
+  // fallback-font metrics and land on the wrong compact/wrap decision. Re-check
+  // once the real fonts are in and the resulting reflow has settled.
+  document.fonts?.ready?.then(() => compactOverflowingAddrs());
+});
