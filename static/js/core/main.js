@@ -124,7 +124,6 @@ async function fetchAndRender() {
     const sortButton = document.getElementById("sort-toggle");
     sortButton.textContent = `Sort: ${formatSortOption(currentSortCriteria)}`;
 
-    sortDomains(currentSortCriteria);
     renderDashboard();
     setupEventListeners();
     setupDragAndDrop();
@@ -204,7 +203,7 @@ function renderDashboard() {
       groupServices.appendChild(dropZone);
     }
 
-    const domainIds = groups[groupName];
+    const domainIds = getGroupDisplayOrder(groupName);
     domainIds.forEach((domainId) => {
       const domain = allDomains.find((d) => d.id === domainId);
       if (domain && (showInactive || domain.enabled)) {

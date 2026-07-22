@@ -1,10 +1,10 @@
 function toggleSortCriteria() {
-  const sortOptions = ["domain", "status", "ip"];
+  const sortOptions = ["domain", "status", "ip", "manual"];
   const currentIndex = sortOptions.indexOf(currentSettings.sortBy || "domain");
   const newSortCriteria = sortOptions[(currentIndex + 1) % sortOptions.length];
 
+  currentSortCriteria = newSortCriteria;
   updateSortButton(newSortCriteria);
-  sortDomains(newSortCriteria);
   renderDashboard();
   saveSettingsToJson({ sortBy: newSortCriteria });
 }
@@ -22,6 +22,8 @@ function formatSortOption(option) {
       return "Status";
     case "ip":
       return "IP Address";
+    case "manual":
+      return "Manual";
     default:
       return option;
   }
@@ -66,30 +68,36 @@ async function updateSortSetting(criteria) {
   }
 }
 
-function sortDomains(criteria) {
-  if (!groups || typeof groups !== "object") {
-    console.warn("Groups is not defined or not an object.");
-    return;
+// "Manual" order lives directly in groups[groupName] - that array is the thing
+// drag-and-drop reorders and saves. The other criteria are computed fresh at
+// render time into a separate copy instead of sorting groups[groupName] in
+// place, so switching sort modes and back to Manual doesn't lose the order you
+// dragged things into.
+function getGroupDisplayOrder(groupName) {
+  const ids = groups[groupName] || [];
+  if (currentSortCriteria === "manual" || !currentSortCriteria) {
+    return ids;
   }
-  Object.keys(groups).forEach((groupName) => {
-    groups[groupName].sort((a, b) => {
-      const domA = allDomains.find((d) => d.id === a);
-      const domB = allDomains.find((d) => d.id === b);
 
-      if (!domA || !domB) return 0;
+  const sorted = [...ids];
+  sorted.sort((a, b) => {
+    const domA = allDomains.find((d) => d.id === a);
+    const domB = allDomains.find((d) => d.id === b);
 
-      switch (criteria) {
-        case "domain":
-          return getDomainDisplayName(domA).localeCompare(getDomainDisplayName(domB));
-        case "status":
-          return getStatusRank(domA) - getStatusRank(domB);
-        case "ip":
-          return domA.forward_host.localeCompare(domB.forward_host);
-        default:
-          return 0;
-      }
-    });
+    if (!domA || !domB) return 0;
+
+    switch (currentSortCriteria) {
+      case "domain":
+        return getDomainDisplayName(domA).localeCompare(getDomainDisplayName(domB));
+      case "status":
+        return getStatusRank(domA) - getStatusRank(domB);
+      case "ip":
+        return domA.forward_host.localeCompare(domB.forward_host);
+      default:
+        return 0;
+    }
   });
+  return sorted;
 }
 
 function getStatusRank(domain) {

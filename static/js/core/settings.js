@@ -60,7 +60,8 @@ function applySettings(updatedKeys = Object.keys(currentSettings)) {
         if (sortButton) {
           sortButton.textContent = `Sort: ${formatSortOption(currentSettings.sortBy)}`;
         }
-        sortDomains(currentSettings.sortBy);
+        currentSortCriteria = currentSettings.sortBy;
+        renderDashboard();
         break;
 
       case "allDomains":

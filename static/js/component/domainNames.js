@@ -69,7 +69,6 @@ async function handleCardEditToggle(button) {
 
     editingCardIds.delete(domainId);
     await saveCardEditsToJSON(renamedDomainNames, domainDescriptions);
-    sortDomains(currentSortCriteria);
   } else {
     editingCardIds.add(domainId);
   }

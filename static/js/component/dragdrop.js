@@ -46,15 +46,35 @@ function setupDragAndDrop() {
         if (index > -1) groups[group].splice(index, 1);
       });
 
-      if (!groups[targetGroup].includes(domainId)) {
+      if (currentSortCriteria === "manual") {
+        const insertIndex = computeCardInsertIndex(groupContainer, event.clientY, domainId);
+        groups[targetGroup].splice(insertIndex, 0, domainId);
+      } else {
         groups[targetGroup].push(domainId);
-        await saveGroupsToJSON(groups);
       }
+      await saveGroupsToJSON(groups);
 
       renderDashboard();
       setupDragAndDrop();
     });
   });
+}
+
+// Only meaningful in Manual sort mode - that's the only mode where the DOM's
+// card order actually matches groups[groupName]'s raw order, so a position
+// computed from where the cards are currently drawn lines up with a position
+// in that array. In other sort modes the row order shown is a freshly-sorted
+// copy (see getGroupDisplayOrder), so a drop position there wouldn't mean
+// anything meaningful in the underlying manual order.
+function computeCardInsertIndex(groupContainer, clientY, excludeDomainId) {
+  const cards = [...groupContainer.querySelectorAll(".card")].filter(
+    (card) => parseInt(card.dataset.id, 10) !== excludeDomainId
+  );
+  for (let i = 0; i < cards.length; i++) {
+    const midpoint = cards[i].getBoundingClientRect().top + cards[i].getBoundingClientRect().height / 2;
+    if (clientY < midpoint) return i;
+  }
+  return cards.length;
 }
 
 function reorderGroups(currentGroups, draggedGroup, targetGroup) {
