@@ -212,7 +212,7 @@ main {
 #dashboard.grid-view .group-services {
   display: grid;
   gap: 0.5rem;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
 }
 .group-container {
   background: var(--surface);
@@ -320,6 +320,8 @@ main {
   align-items: center;
   flex: none;
   cursor: help;
+  position: relative;
+  z-index: 2;
 }
 @media (max-width: 640px) {
   .card-addr {
